@@ -1,0 +1,22 @@
+services:
+  simplecrm:
+    build:
+      context: ..
+      dockerfile: SimpleCrmService/Dockerfile
+    image: simple-crm-service:latest
+    container_name: simple-crm-service
+    ports:
+      - "8080:8080"
+    environment:
+      - ASPNETCORE_URLS=http://+:8080
+
+  zap:
+    image: ghcr.io/zaproxy/zaproxy:stable
+    container_name: zap-baseline
+    depends_on:
+      - simplecrm
+    command: >
+      sh -c "until wget -qO- http://simplecrm:8080/people >/dev/null 2>&1; do echo 'Waiting for API...'; sleep 2; done;
+      zap-baseline.py -t http://simplecrm:8080 -r zap_report.html -d -I"
+    volumes:
+      - ./zap-reports:/zap/wrk
