@@ -6,6 +6,11 @@ TARGET_URL=${1:?"target url required"}
 REPORT_PATH=${2:?"report path required"}
 EXTRA_ARGS=${3:-}
 
+# Ensure ZAP writes any temp/automation files to a writable location
+# GitHub Actions sets HOME to /github/home which can be read-only for non-root users in container actions
+export HOME=/zap/wrk
+mkdir -p "$HOME"
+
 # Run baseline scan
 zap-baseline.py -t "$TARGET_URL" -r zap_report.html $EXTRA_ARGS
 
