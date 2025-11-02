@@ -25,6 +25,11 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Additional SAST (Semgrep)
+        uses: returntocorp/semgrep-action@v1
+        with:
+          config: auto
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
