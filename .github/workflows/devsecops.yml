@@ -60,10 +60,12 @@ jobs:
           format: table
           exit-code: 0
 
-      - name: Generate SBOM (Syft)
-        uses: anchore/syft-action@v1
+      - name: Generate SBOM (Anchore)
+        uses: anchore/sbom-action@v0
         with:
-          args: "dir:. -o cyclonedx-json"
+          path: .
+          format: cyclonedx-json
+          output-file: sbom.cdx.json
 
       - name: Run ZAP Baseline Scan
         uses: ./.github/actions/zap-baseline
