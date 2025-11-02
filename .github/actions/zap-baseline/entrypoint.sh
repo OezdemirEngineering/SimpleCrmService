@@ -11,6 +11,18 @@ EXTRA_ARGS=${3:-}
 export HOME=/zap/wrk
 mkdir -p "$HOME"
 
+# On Linux GitHub runners, host.docker.internal may not resolve inside containers.
+# If the target uses host.docker.internal, rewrite it to the Docker default gateway IP.
+if echo "$TARGET_URL" | grep -q "host.docker.internal"; then
+  GW_IP=$(ip route | awk '/default/ {print $3}' || true)
+  if [ -n "${GW_IP:-}" ]; then
+    TARGET_URL=$(printf '%s' "$TARGET_URL" | sed "s/host\\.docker\\.internal/$GW_IP/g")
+    echo "Rewrote target to: $TARGET_URL"
+  else
+    echo "Warning: Could not determine Docker gateway IP; proceeding with original target" >&2
+  fi
+fi
+
 # Run baseline scan
 zap-baseline.py -t "$TARGET_URL" -r zap_report.html $EXTRA_ARGS
 
