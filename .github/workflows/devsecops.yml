@@ -39,6 +39,10 @@ jobs:
         run: |
           docker build -f SimpleCrmService/Dockerfile -t simple-crm:ci .
 
+      - name: Tag image for scanning
+        run: |
+          docker tag simple-crm:ci simplecrmservice:latest
+
       - name: Run application container
         run: |
           docker run -d --rm --name simple-crm -p 8080:8080 simple-crm:ci
@@ -48,6 +52,18 @@ jobs:
           for i in {1..30}; do
             if curl -fsS http://127.0.0.1:8080/people >/dev/null; then
               echo "API is up"; exit 0; fi; sleep 2; done; echo "API did not become ready"; docker logs simple-crm; exit 1
+
+      - name: Container & SCA Scan (Trivy)
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: simplecrmservice:latest
+          format: table
+          exit-code: 0
+
+      - name: Generate SBOM (Syft)
+        uses: anchore/syft-action@v1
+        with:
+          args: "dir:. -o cyclonedx-json"
 
       - name: Run ZAP Baseline Scan
         uses: ./.github/actions/zap-baseline
