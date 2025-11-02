@@ -1,0 +1,56 @@
+name: DevSecOps CI
+
+on:
+  push:
+    branches: [ "master", "main" ]
+  pull_request:
+    branches: [ "master", "main" ]
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-dast:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build application image
+        run: |
+          docker build -f SimpleCrmService/Dockerfile -t simple-crm:ci .
+
+      - name: Run application container
+        run: |
+          docker run -d --rm --name simple-crm -p 8080:8080 simple-crm:ci
+
+      - name: Wait for API
+        run: |
+          for i in {1..30}; do
+            if curl -fsS http://127.0.0.1:8080/people >/dev/null; then
+              echo "API is up"; exit 0; fi; sleep 2; done; echo "API did not become ready"; docker logs simple-crm; exit 1
+
+      - name: Run ZAP Baseline Scan
+        uses: ./.github/actions/zap-baseline
+        with:
+          # Use host.docker.internal to reach the host-mapped port from inside the Docker-based Action container
+          target: http://host.docker.internal:8080
+          report: SimpleCrmService/zap-reports/zap_report.html
+          args: -d -I
+
+      - name: Upload ZAP report artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: zap-report
+          path: SimpleCrmService/zap-reports/zap_report.html
+
+      - name: Stop containers
+        if: always()
+        run: |
+          docker ps -q --filter name=simple-crm | xargs -r docker stop

@@ -1,0 +1,24 @@
+name: 'ZAP Baseline Action'
+description: 'Run OWASP ZAP Baseline scan against a target and save report.'
+author: 'GitHub Copilot'
+
+inputs:
+  target:
+    description: 'Target URL to scan'
+    required: true
+  report:
+    description: 'Path to write the zap_report.html relative to repo root'
+    required: true
+  args:
+    description: 'Additional zap-baseline.py args (e.g., -d -I -m 5)'
+    required: false
+    default: ''
+
+runs:
+  using: 'docker'
+  image: 'Dockerfile'
+  args:
+    - '--'
+    - '${{ inputs.target }}'
+    - '${{ inputs.report }}'
+    - '${{ inputs.args }}'
