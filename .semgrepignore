@@ -1,0 +1,6 @@
+# Exclude generated ZAP DAST reports from Semgrep SAST scans
+# Repo-relative paths and globs are supported
+**/zap-reports/**
+SimpleCrmService/zap-reports/
+SimpleCrmService/zap-reports/*.html
+SimpleCrmService/zap-reports/*.yaml
